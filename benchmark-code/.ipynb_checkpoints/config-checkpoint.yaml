@@ -1,0 +1,47 @@
+patient_id_col: cases.submitter_id
+target_label: vital_status_12
+main_modality: demographics
+mask_missing: True # FALSE FOR IMPUTATION; TRUE FOR MASKING (Transformer tokens)
+folds_path: ../lung/folds/cptac-tcga.npy
+
+fusion_strategy: early # early, late or attention
+classifier: mlp # mlp or xgboost
+
+modalities:
+    #-   name: wsi
+    #    type: image
+    #    single_token: False
+    #    folder: ../lung/features/pretty/WSI-LABELED
+    
+    #-   name: ct
+    #    type: image
+    #    single_token: False
+    #    folder: ../lung/features/pretty/CT-SCANS-LABELED
+
+    #-   name: pet
+    #    type: image
+    #    single_token: False
+    #    folder: ../lung/features/pretty/PET-SCANS-LABELED
+
+    #-   name: mri
+    #    type: image
+    #    folder: ../kidney/features/img-features/MRI Features
+
+    -   name: demographics
+        type: tabular
+        csv_path: ../lung/features/pretty/CPTAC+TCGA/demographics-encoded.csv
+        single_token: False
+        mask: False
+        drop_cols:
+            - demographic.days_to_death
+            - days_to_last_fup
+            - vital_status_dss
+
+    -   name: diagnosis
+        type: tabular
+        csv_path: ../lung/features/pretty/CPTAC+TCGA/diagnosis-encoded.csv
+        single_token: False
+
+    #-   name: transcriptomic
+    #    type: tabular
+    #    csv_path: ../lung/features/pretty/CPTAC+TCGA/selected-transcriptomics.csv
