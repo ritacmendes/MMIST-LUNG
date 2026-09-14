@@ -10,6 +10,7 @@ from sklearn.metrics import (
 import numpy as np
 import copy
 import torch.nn.functional as F
+import os
 
 def load_or_create_folds(dataset, folds_path, n_splits=5):
     if not os.path.exists(folds_path):

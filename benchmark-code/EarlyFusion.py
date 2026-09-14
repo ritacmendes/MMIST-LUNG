@@ -43,7 +43,7 @@ class EarlyFusionModule(nn.Module):
         tokens = []
         attention_mask = []
         token_names_batch = []
-
+        """
         if self.fusion_head=='unimodal':
             clinical = torch.cat(
                 [
@@ -60,7 +60,7 @@ class EarlyFusionModule(nn.Module):
                 "final_token_names_batch": None,
                 "rollout": None,
             } 
-    
+        """
         # === DYNAMIC MODALITY LOOP ===
         for mod in self.modality_names:
             if mod in batch["out_batch_tab_feats"]:

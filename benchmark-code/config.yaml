@@ -1,10 +1,10 @@
 patient_id_col: cases.submitter_id
-target_label: vital_status_12
+target_label: vital_status_dss
 main_modality: demographics
 mask_missing: True # FALSE FOR IMPUTATION; TRUE FOR MASKING (Transformer tokens)
 folds_path: ../lung/folds/cptac-tcga.npy
 
-fusion_strategy: early # early, late or attention
+fusion_strategy: attention # early, late or attention
 classifier: mlp # mlp or xgboost
 
 modalities:
@@ -35,7 +35,7 @@ modalities:
         drop_cols:
             - demographic.days_to_death
             - days_to_last_fup
-            - vital_status_dss
+            - vital_status_12
 
     -   name: diagnosis
         type: tabular

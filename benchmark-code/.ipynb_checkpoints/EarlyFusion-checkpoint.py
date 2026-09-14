@@ -43,7 +43,7 @@ class EarlyFusionModule(nn.Module):
         tokens = []
         attention_mask = []
         token_names_batch = []
-
+        """
         if self.fusion_head=='unimodal':
             clinical = torch.cat(
                 [
@@ -51,7 +51,7 @@ class EarlyFusionModule(nn.Module):
                     batch["out_batch_tab_feats"]["diagnosis"],
                 ],
                 dim=1,
-            )   # (B, 15)
+            )  
             
             out = self.fc_clin(clinical)
             return {
@@ -60,25 +60,19 @@ class EarlyFusionModule(nn.Module):
                 "final_token_names_batch": None,
                 "rollout": None,
             } 
-    
+        """
         # === DYNAMIC MODALITY LOOP ===
         for mod in self.modality_names:
             if mod in batch["out_batch_tab_feats"]:
                 x = batch["out_batch_tab_feats"][mod].unsqueeze(1)
-
                 
                 mask = batch["out_batch_tab_mask"][mod]
                 x = self.modality_enc(x, mod)
                 _, tkn_len, _ = x.shape
 
-                #print(x.shape)
-
                 if self.instance_agg == 'mean':
                     valid = (~mask).unsqueeze(-1).float()
-                    x = (x * valid).sum(dim=1) / valid.sum(dim=1).clamp(min=1)
-
-                    #print("avg", x.shape)
-                
+                    x = (x * valid).sum(dim=1) / valid.sum(dim=1).clamp(min=1)                
 
                 tokens.append(x)                
                 attention_mask.append(mask)
@@ -100,8 +94,6 @@ class EarlyFusionModule(nn.Module):
                 mask = batch["out_batch_img_mask"][mod] # (B, S)
                 x = self.modality_enc(x, mod)
 
-                #print(x.shape)
-
                 if self.instance_agg == 'mean':
                     valid = (~mask).float().unsqueeze(-1)    # (B, S, 1)
                     # masked mean over scans
@@ -109,27 +101,9 @@ class EarlyFusionModule(nn.Module):
                 
                 tokens.append(x)
                 attention_mask.append(mask)
-
-            else:
-                # modality completely missing
-                print("diz me que nunca vai acontecer")
-                break
-                tokens.append(torch.zeros_like(cls_token))
-
-                if self.mask_missing:
-                    attention_mask.append(torch.ones(B, 1, dtype=torch.bool, device=cls_token.device)) # TRUE
-                else:
-                    attention_mask.append(torch.zeros(B, 1, dtype=torch.bool, device=cls_token.device)) # FALSE, let model see zeroed tokens
-        
-                token_names_batch.append(
-                    [[f"{mod.upper()}_PAD"] for _ in range(B)]
-                )
     
-        # concat tokens
-        
-        #x = torch.cat(tokens, dim=1)                 # (B, T, D)
+
         stacked = torch.stack(tokens, dim=1)
-        print("x x", x.shape)
         if self.fusion_head == 'mean':
             fused = stacked.mean(dim=1)
         elif self.fusion_head == 'max':

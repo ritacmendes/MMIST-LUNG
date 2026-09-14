@@ -1,0 +1,103 @@
+patient_id_col: ID/HB
+target_label: Obito
+main_modality: demographics
+mask_missing: True # FALSE FOR IMPUTATION; TRUE FOR MASKING
+folds_path: ../../gastric-folds/SG.npy
+
+fusion_strategy: early # early, late or attention
+classifier: mlp # mlp or xgboost
+
+modalities:
+    -   name: demographics
+        type: tabular
+        csv_path: ../../gastric-features/SG/dem.csv
+        single_token: False
+        mask: False
+        drop_cols:
+            - Data_diagnostico
+            - Data_obito/ultimoFolowup
+            - Raça
+            - Obito
+            - days_to_last_contact
+
+    -   name: neoplasia
+        type: tabular
+        csv_path: ../../gastric-features/SG/neo.csv
+        mask: False
+        single_token: False
+
+    -   name: tx_paliativo
+        type: tabular
+        mask: False
+        csv_path: ../../gastric-features/SG/tx_pal.csv
+        single_token: False
+        drop_cols:
+            - Data_diagnostico
+            - Tx_QT
+            - Inicio_QT
+            - Data_progressao
+            - Tempo_progressao_morte
+            - Resp_QT
+            - days
+
+    -   name: prog_paliativo
+        type: tabular
+        mask: False
+        csv_path: ../../gastric-features/SG/prog_pal.csv
+        single_token: False
+        drop_cols:
+            - Data_diagnostico
+            - Data_progressao
+            - Tempo_progressao_morte
+            - days
+
+    -   name: qt_adj
+        type: tabular
+        mask: False
+        csv_path: ../../gastric-features/SG/qt_adj.csv
+        single_token: False
+        drop_cols:
+            - Data_diagnostico
+            - Data_inicio_TxCurativo
+            - days
+
+    -   name: qt_periop
+        type: tabular
+        mask: False
+        csv_path: ../../gastric-features/SG/qt_periop.csv
+        single_token: False
+        drop_cols:
+            - Data_diagnostico
+            - Data_inicio_TxCurativo
+            - days
+
+    -   name: tx_cirurgia
+        type: tabular
+        mask: False
+        csv_path: ../../gastric-features/SG/tx_cirurgia.csv
+        single_token: False
+        drop_cols:
+            - days_to_mtx
+            - Data_inicio_TxCurativo
+            - Data_metastização_apos_TxCurativo
+            - Data_diagnostico
+            - days
+
+    -   name: mtx
+        type: tabular
+        mask: False
+        single_token: False
+        csv_path: ../../gastric-features/SG/mtx_diag.csv
+        drop_cols: 
+            - days
+
+    -   name: tx_extra
+        type: tabular
+        mask: False
+        csv_path: ../../gastric-features/SG/tx_extra.csv
+        single_token: False
+        drop_cols:
+           - Data_inicio_TxCurativo
+           - Data_metastização_apos_TxCurativo
+           - Data_diagnostico
+           - days

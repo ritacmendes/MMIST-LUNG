@@ -1,6 +1,88 @@
 from collections import defaultdict
 import torch
 
+from torch.nn.utils.rnn import pad_sequence
+
+
+def pad_tabular_instances(feats_list, masks_list):
+    """
+    feats_list:
+        list of tensors:
+            [D]      for a single observation
+            [N, D]   for repeated observations
+
+    masks_list:
+        corresponding masks:
+            [D]      or
+            [N, D]
+
+    Returns:
+        padded_feats:
+            [B, Nmax, D]
+
+        padded_mask:
+            [B, Nmax, D]
+    """
+
+    B = len(feats_list)
+
+    # Normalize every sample to [N, D]
+    feats_list = [
+        feats.unsqueeze(0) if feats.ndim == 1 else feats
+        for feats in feats_list
+    ]
+
+    masks_list = [
+        mask.unsqueeze(0) if mask.ndim == 1 else mask
+        for mask in masks_list
+    ]
+
+    max_n = max(feats.shape[0] for feats in feats_list)
+    feat_dim = feats_list[0].shape[-1]
+
+    device = feats_list[0].device
+    dtype = feats_list[0].dtype
+
+    # Zero padding for feature values
+    padded_feats = torch.zeros(
+        B,
+        max_n,
+        feat_dim,
+        dtype=dtype,
+        device=device,
+    )
+
+    # TRUE = masked
+    # Therefore padded observations are completely masked.
+    padded_mask = torch.ones(
+        B,
+        max_n,
+        feat_dim,
+        dtype=torch.bool,
+        device=device,
+    )
+
+    for i, (feats, mask) in enumerate(zip(feats_list, masks_list)):
+
+        n = feats.shape[0]
+
+        if feats.shape[1] != feat_dim:
+            raise ValueError(
+                f"Inconsistent feature dimension: "
+                f"expected {feat_dim}, got {feats.shape[1]}"
+            )
+
+        if mask.shape != feats.shape:
+            raise ValueError(
+                f"Mask shape {mask.shape} does not match "
+                f"feature shape {feats.shape}"
+            )
+
+        padded_feats[i, :n] = feats
+        padded_mask[i, :n] = mask
+
+    return padded_feats, padded_mask
+
 def pad_img_modality(patient_imaging, filenames, mod, device):
     """
     pads sequence to max_pad so that every sequence in batch has the same length
@@ -41,6 +123,8 @@ def pad_img_modality(patient_imaging, filenames, mod, device):
 
 def collate_fn(batch, mask_missing_flag, modalities, device):        
     batch_img_feats_dict, batch_img_mask_dict, batch_img_filenames_dict = defaultdict(list), defaultdict(list), defaultdict(list)
+    batch_tab_feats_dict, batch_tab_mask_dict, batch_tab_filenames_dict = defaultdict(list), defaultdict(list), defaultdict(list)
+
     
     patient_ids = []
     patient_labels = []
@@ -110,14 +194,23 @@ def collate_fn(batch, mask_missing_flag, modalities, device):
             batch_img_mask_dict[img_mod].append(mask)
             batch_img_filenames_dict[img_mod].append(filenames)
 
+        # pad tab modalities to MAX_PAD
+        for tab_mod in tab_feats_dict.keys():
+            mod = modalities[tab_mod]
+            feats, mask = pad_tabular_instances(tab_feats_dict[tab_mod], tab_mask_dict[tab_mod])
+
+            batch_tab_feats_dict[tab_mod].append(feats)
+            batch_tab_mask_dict[tab_mod].append(mask)
+    
     out_batch_img_feats, out_batch_img_mask, out_batch_tab_feats, out_batch_tab_mask = {}, {}, {}, {}
+
     for modality, list_of_samples in batch_img_feats_dict.items():
         out_batch_img_feats[modality] = torch.stack(list_of_samples)
         out_batch_img_mask[modality] = torch.stack(batch_img_mask_dict[modality]).bool()
 
-    for modality, list_of_samples in tab_feats_dict.items():
+    for modality, list_of_samples in batch_tab_feats_dict.items():
         out_batch_tab_feats[modality] = torch.stack(list_of_samples)
-        out_batch_tab_mask[modality] = torch.stack(tab_mask_dict[modality]).bool()
+        out_batch_tab_mask[modality] = torch.stack(batch_tab_mask_dict[modality]).bool()
     
     return {
         "patient_ids": patient_ids,

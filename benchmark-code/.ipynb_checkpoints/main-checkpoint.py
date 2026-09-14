@@ -26,7 +26,7 @@ def set_seed(seed):
     torch.cuda.manual_seed_all(seed)
     
 # Load config file
-with open('config.yaml', "r") as f:
+with open('config-gastric.yaml', "r") as f:
     cfg = yaml.safe_load(f)
 
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
@@ -50,12 +50,12 @@ modality_names = [
 # -- Set Train parameters -- 
 params = {
     'd_model': 256,
-    'num_heads': 4,
+    'num_heads': 8,
     'num_layers': 2,
     'dropout': 0.2723195214333366,
-    'num_epochs': 100,
+    'num_epochs': 50,
     'batch_size': 32,
-    'lr': 0.00013,
+    'lr': 0.0003,
     # for early stopping
     'min_train_epochs': 5,
     'patience':20     
@@ -79,10 +79,11 @@ elif fusion_strategy == 'late':
 compute_all_metrics = False if late_fusion or early_fusion else True 
 timestamp = datetime.now().strftime("%m%d_%H%M")
 mask_imp_str = 'mask' if cfg["mask_missing"] else 'imp'
+run=1
 
 early_fusion_options = {
     'instance_agg':'mean',
-    'fusion_head':['unimodal'],
+    'fusion_head':['mean','max'],
 }
 late_fusion_options = {
     'instance_agg':'mean',
